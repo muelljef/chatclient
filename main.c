@@ -13,7 +13,6 @@
 #define BSIZE 501
 
 void error(const char *msg);
-void removeNewline(char *buffer, int *n);
 
 int main() {
     uint16_t portno;
@@ -89,20 +88,4 @@ void error(const char *msg)
 {
     perror(msg);
     exit(1);
-}
-
-//entry: string and string length of n
-//exit: first newline will be replace by null terminating ch
-//      and n will be decremented
-void removeNewline(char *buffer, int *n)
-{
-    int i;
-    for(i = 0; i < *n ; i++)
-    {
-        if(buffer[i] == '\n')
-        {
-            buffer[i] = '\0';
-            *n--;
-        }
-    }
 }
