@@ -17,16 +17,15 @@ void removeNewline(char *buffer, int *n);
 
 int main() {
     uint16_t portno;
-    int sockfd, n;
+    int sockfd, recMessageSize, quitBool;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[BSIZE];
-    char *rmLf;
-
     char message[BSIZE];
+    char *newLineChrPtr;
 
     // The hardcoded port number to talk to the chatserver on
-    portno = 50516;
+    portno = 50517;
 
     // Create the socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -54,17 +53,31 @@ int main() {
         exit(2);
     }
 
-    //Initialize the buffer to nulls
-    memset(message, '\0', BSIZE);
-    printf("Enter a lowercase sentence: ");
-    fgets(message, BSIZE, stdin);
-    write(sockfd, message, sizeof(message));
+    quitBool = 0;
+    while (quitBool == 0) {
+        //Initialize the buffer to nulls
+        memset(message, '\0', BSIZE);
+        printf("Gypsy>");
+        fgets(message, BSIZE, stdin);
+        //search for newline (from just before EOF) and remove it
+        newLineChrPtr = strchr(message, '\n');
+        if(newLineChrPtr != NULL) {
+            *newLineChrPtr = '\0';
+        }
 
-    //Initialize the buffer to nulls
-    memset(buffer, '\0', BSIZE);
-    // Read the server response and print it
-    read(sockfd, buffer, BSIZE - 1);
-    printf("%s", buffer);
+        if (strcmp(message, "\\quit") == 0) {
+            quitBool = 1;
+            continue;
+        }
+
+        write(sockfd, message, sizeof(message));
+
+        //Initialize the buffer to nulls
+        memset(buffer, '\0', BSIZE);
+        // Read the server response and print it
+        read(sockfd, buffer, BSIZE - 1);
+        printf("%s\n", buffer);
+    }
 
     close(sockfd);
     return 0;
