@@ -10,7 +10,7 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#define BSIZE 501
+#define BSIZE 511
 
 void error(const char *msg);
 
@@ -22,6 +22,7 @@ int main() {
     char buffer[BSIZE];
     char message[BSIZE];
     char *newLineChrPtr;
+    char handle[11];
 
     // The hardcoded port number to talk to the chatserver on
     portno = 50517;
@@ -48,19 +49,29 @@ int main() {
     //Connect to the socket
     if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
     {
-        fprintf(stderr, "Could not connect to port %u, otp_enc closing\n", portno);
+        fprintf(stderr, "Could not connect to port %u, chatclient closing\n", portno);
         exit(2);
+    }
+
+    // Initialize the buffer to all nulls
+    memset(handle, '\0', sizeof(handle));
+    // Get the message from the client
+    printf("What is your handle? (10 chars or less)");
+    fgets(handle, sizeof(handle), stdin);
+    //search for newline and replace it will null char
+    newLineChrPtr = strchr(handle, '\n');
+    if(newLineChrPtr != NULL) {
+        *newLineChrPtr = '\0';
     }
 
     while (1) {
         // Initialize the buffer to all nulls
         memset(message, '\0', BSIZE);
-
         // Get the message from the client
-        printf("Gypsy>");
+        printf("%s>", handle);
         fgets(message, BSIZE, stdin);
 
-        //search for newline and replace it will null char
+        // search for newline and replace it will null char
         newLineChrPtr = strchr(message, '\n');
         if(newLineChrPtr != NULL) {
             *newLineChrPtr = '\0';
@@ -68,18 +79,23 @@ int main() {
 
         // Check if the client wants to quit
         if (strcmp(message, "\\quit") == 0) {
-            printf("Closing the connection and quitting");
+            printf("Closing the connection and quitting\n");
             break;
         }
 
+        memset(buffer, '\0', BSIZE);
+        strcpy(buffer, handle);
+        strcat(buffer, ">");
+        strcat(buffer, message);
+
         // Send the message to the server
-        write(sockfd, message, sizeof(message));
+        write(sockfd, buffer, sizeof(buffer));
 
         //Initialize the buffer to nulls
         memset(buffer, '\0', BSIZE);
         // Read the server response and print it
         if (read(sockfd, buffer, BSIZE - 1) == 0) {
-            printf("Server closed the connection, quitting");
+            printf("Server closed the connection, quitting\n");
             break;
         }
         printf("%s\n", buffer);
