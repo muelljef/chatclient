@@ -52,29 +52,36 @@ int main() {
         exit(2);
     }
 
-    quitBool = 0;
-    while (quitBool == 0) {
-        //Initialize the buffer to nulls
+    while (1) {
+        // Initialize the buffer to all nulls
         memset(message, '\0', BSIZE);
+
+        // Get the message from the client
         printf("Gypsy>");
         fgets(message, BSIZE, stdin);
-        //search for newline (from just before EOF) and remove it
+
+        //search for newline and replace it will null char
         newLineChrPtr = strchr(message, '\n');
         if(newLineChrPtr != NULL) {
             *newLineChrPtr = '\0';
         }
 
+        // Check if the client wants to quit
         if (strcmp(message, "\\quit") == 0) {
-            quitBool = 1;
-            continue;
+            printf("Closing the connection and quitting");
+            break;
         }
 
+        // Send the message to the server
         write(sockfd, message, sizeof(message));
 
         //Initialize the buffer to nulls
         memset(buffer, '\0', BSIZE);
         // Read the server response and print it
-        read(sockfd, buffer, BSIZE - 1);
+        if (read(sockfd, buffer, BSIZE - 1) == 0) {
+            printf("Server closed the connection, quitting");
+            break;
+        }
         printf("%s\n", buffer);
     }
 
