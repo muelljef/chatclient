@@ -27,13 +27,15 @@ int main() {
     char socketMessage[MSIZE];
     char handle[HSIZE];
     char portNumber[6];
-    char hostName[16];
+    char hostName[64];
 
-    // The hardcoded port number to talk to the chatserver on
-    portno = 50517;
-
-    getInput(hostName, 16, "Enter the host name: ");
+    // Get the host name and port number
+    getInput(hostName, 64, "Enter the host name: ");
     getInput(portNumber, 6, "Enter the port number: ");
+    portno = (uint16_t) atoi(portNumber);
+    if (portno == 0) {
+        error("Error port number not valid");
+    }
 
     // Create the socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -42,7 +44,7 @@ int main() {
     }
 
     //Get server details
-    server = gethostbyname("localhost");
+    server = gethostbyname(hostName);
     if (server == NULL) {
         fprintf(stderr, "ERROR, no such host\n");
         exit(0);
@@ -55,8 +57,7 @@ int main() {
     serv_addr.sin_port = htons(portno);
 
     //Connect to the socket
-    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0)
-    {
+    if (connect(sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) {
         fprintf(stderr, "Could not connect to port %u, chatclient closing\n", portno);
         exit(2);
     }
@@ -119,7 +120,8 @@ void getInput(char *dest, size_t n, char *prompt)
     if(newLineChrPtr != NULL) {
         *newLineChrPtr = '\0';
     }
-    // Copy the first 10 characters for the handle into the handle parameter
-    memset(dest, '\0', n);
+    // Set all of destination to nulls clearing it
+    memset(dest, '\0', sizeof(dest));
+    // Copy up to the n - 1 of the input
     strncpy(dest, inputBuffer, n - 1);
 }
