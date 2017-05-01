@@ -10,19 +10,21 @@
 #include <netinet/in.h>
 #include <netdb.h>
 
-#define BSIZE 511
+#define BSIZE 4096
+#define HSIZE 11
+#define MSIZE 512
 
 void error(const char *msg);
 
 int main() {
     uint16_t portno;
-    int sockfd, recMessageSize, quitBool;
+    int sockfd;
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[BSIZE];
-    char message[BSIZE];
+    char message[MSIZE];
     char *newLineChrPtr;
-    char handle[11];
+    char handle[HSIZE];
 
     // The hardcoded port number to talk to the chatserver on
     portno = 50517;
@@ -54,44 +56,47 @@ int main() {
     }
 
     // Initialize the buffer to all nulls
-    memset(handle, '\0', sizeof(handle));
+    memset(buffer, '\0', BSIZE);
     // Get the message from the client
     printf("What is your handle? (10 chars or less)");
-    fgets(handle, sizeof(handle), stdin);
+    fgets(buffer, BSIZE, stdin);
     //search for newline and replace it will null char
-    newLineChrPtr = strchr(handle, '\n');
+    newLineChrPtr = strchr(buffer, '\n');
     if(newLineChrPtr != NULL) {
         *newLineChrPtr = '\0';
     }
+    // Copy the first 10 characters for the handle into the handle parameter
+    memset(handle, '\0', HSIZE);
+    strncpy(handle, buffer, HSIZE - 1);
 
     while (1) {
-        // Initialize the buffer to all nulls
-        memset(message, '\0', BSIZE);
+        // Set the buffer to all nulls
+        memset(buffer, '\0', BSIZE);
         // Get the message from the client
         printf("%s>", handle);
-        fgets(message, BSIZE, stdin);
-
+        fgets(buffer, BSIZE, stdin);
         // search for newline and replace it will null char
-        newLineChrPtr = strchr(message, '\n');
+        newLineChrPtr = strchr(buffer, '\n');
         if(newLineChrPtr != NULL) {
             *newLineChrPtr = '\0';
         }
 
         // Check if the client wants to quit
-        if (strcmp(message, "\\quit") == 0) {
+        if (strcmp(buffer, "\\quit") == 0) {
             printf("Closing the connection and quitting\n");
             break;
         }
 
-        memset(buffer, '\0', BSIZE);
-        strcpy(buffer, handle);
-        strcat(buffer, ">");
-        strcat(buffer, message);
+        // Copy the handle and buffer message into the message var for sending
+        memset(message, '\0', MSIZE);
+        strncpy(message, handle, HSIZE - 1);
+        strcat(message, ">");
+        strncat(message, buffer, 500);
 
         // Send the message to the server
-        write(sockfd, buffer, sizeof(buffer));
+        write(sockfd, message, MSIZE);
 
-        //Initialize the buffer to nulls
+        // Set  the buffer to nulls
         memset(buffer, '\0', BSIZE);
         // Read the server response and print it
         if (read(sockfd, buffer, BSIZE - 1) == 0) {
