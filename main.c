@@ -11,10 +11,11 @@
 #include <netdb.h>
 
 #define BSIZE 4096
-#define HSIZE 11
+#define HSIZE 12
 #define MSIZE 512
 
 void error(const char *msg);
+void getInput(char *dest, size_t n, char *prompt);
 
 int main() {
     uint16_t portno;
@@ -22,12 +23,17 @@ int main() {
     struct sockaddr_in serv_addr;
     struct hostent *server;
     char buffer[BSIZE];
-    char message[MSIZE];
-    char *newLineChrPtr;
+    char message[501];
+    char socketMessage[MSIZE];
     char handle[HSIZE];
+    char portNumber[6];
+    char hostName[16];
 
     // The hardcoded port number to talk to the chatserver on
     portno = 50517;
+
+    getInput(hostName, 16, "Enter the host name: ");
+    getInput(portNumber, 6, "Enter the port number: ");
 
     // Create the socket
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -56,45 +62,25 @@ int main() {
     }
 
     // Initialize the buffer to all nulls
-    memset(buffer, '\0', BSIZE);
-    // Get the message from the client
-    printf("What is your handle? (10 chars or less)");
-    fgets(buffer, BSIZE, stdin);
-    //search for newline and replace it will null char
-    newLineChrPtr = strchr(buffer, '\n');
-    if(newLineChrPtr != NULL) {
-        *newLineChrPtr = '\0';
-    }
-    // Copy the first 10 characters for the handle into the handle parameter
-    memset(handle, '\0', HSIZE);
-    strncpy(handle, buffer, HSIZE - 1);
+    getInput(handle, HSIZE - 1, "What is your handle? (10 chars or less)");
+    strcat(handle, ">");
 
     while (1) {
-        // Set the buffer to all nulls
-        memset(buffer, '\0', BSIZE);
-        // Get the message from the client
-        printf("%s>", handle);
-        fgets(buffer, BSIZE, stdin);
-        // search for newline and replace it will null char
-        newLineChrPtr = strchr(buffer, '\n');
-        if(newLineChrPtr != NULL) {
-            *newLineChrPtr = '\0';
-        }
+        getInput(message, 501, handle);
 
         // Check if the client wants to quit
-        if (strcmp(buffer, "\\quit") == 0) {
+        if (strcmp(message, "\\quit") == 0) {
             printf("Closing the connection and quitting\n");
             break;
         }
 
         // Copy the handle and buffer message into the message var for sending
-        memset(message, '\0', MSIZE);
-        strncpy(message, handle, HSIZE - 1);
-        strcat(message, ">");
-        strncat(message, buffer, 500);
+        memset(socketMessage, '\0', MSIZE);
+        strncpy(socketMessage, handle, HSIZE - 1);
+        strncat(socketMessage, message, 500);
 
         // Send the message to the server
-        write(sockfd, message, MSIZE);
+        write(sockfd, socketMessage, MSIZE);
 
         // Set  the buffer to nulls
         memset(buffer, '\0', BSIZE);
@@ -116,4 +102,24 @@ void error(const char *msg)
 {
     perror(msg);
     exit(1);
+}
+
+void getInput(char *dest, size_t n, char *prompt)
+{
+    char inputBuffer[BSIZE];
+    char *newLineChrPtr;
+
+    // Initialize the buffer to all nulls
+    memset(inputBuffer, '\0', BSIZE);
+    // Get the message from the client
+    printf("%s", prompt);
+    fgets(inputBuffer, BSIZE, stdin);
+    //search for newline and replace it will null char
+    newLineChrPtr = strchr(inputBuffer, '\n');
+    if(newLineChrPtr != NULL) {
+        *newLineChrPtr = '\0';
+    }
+    // Copy the first 10 characters for the handle into the handle parameter
+    memset(dest, '\0', n);
+    strncpy(dest, inputBuffer, n - 1);
 }
