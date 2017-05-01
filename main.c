@@ -29,12 +29,15 @@ int main() {
     char portNumber[6];
     char hostName[64];
 
-    // Get the host name and port number
+    // Get the host name
     getInput(hostName, 64, "Enter the host name: ");
+
+    // Get the port number
     getInput(portNumber, 6, "Enter the port number: ");
     portno = (uint16_t) atoi(portNumber);
     if (portno == 0) {
-        error("Error port number not valid");
+        fprintf(stderr, "ERROR, invalid port number, %u\n", portno);
+        exit(2);
     }
 
     // Create the socket
@@ -47,7 +50,7 @@ int main() {
     server = gethostbyname(hostName);
     if (server == NULL) {
         fprintf(stderr, "ERROR, no such host\n");
-        exit(0);
+        exit(2);
     }
 
     //Setting server details in struct serv_addr
